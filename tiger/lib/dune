@@ -1,0 +1,11 @@
+(menhir 
+ (modules parser)
+ (flags ("--dump" "--explain")))
+
+(ocamllex 
+ (modules lexer))
+
+(library
+ (name tiger)
+ (libraries core textutils.ascii_table logs fmt logs.fmt)
+ (preprocess (pps ppx_deriving.show ppx_compare ppx_deriving.make ppx_sexp_conv ppx_inline_test ppx_expect)))
