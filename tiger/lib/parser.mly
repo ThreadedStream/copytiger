@@ -109,7 +109,7 @@ let break :=
     ~ = loc("break"); <BREAK>
 
 let primitive :=
-    | ~ = loc("string"); <STRING>
+    | ~ = loc("string"); <String>
     | ~ = loc("int"); <Int>
 
 let unary := 

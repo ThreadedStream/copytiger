@@ -34,8 +34,7 @@ let type_mismatch_error3 l expected actual =
 let missing_field_error t name = 
   id_error name @@ sprintf 
     "record of type \"%s\" doesn't have field \"%s\""
-    (T.to_string expected) (T.to_string actual) in 
-  type_error l @@ msg ^ msg' 
+    (T.to_string t) (name.L.value.S.name) 
 
 let rec trans_prog expr = 
   let module Frag = Fragment.Store in 
@@ -237,7 +236,7 @@ and trans_expr expr ~env =
         tr_simple_var var ~env 
       | FieldVar (var, field) -> 
         tr_field_var var field ~env
-      | SubscriptVar (var sub) ->
+      | SubscriptVar (var, sub) ->
         tr_subscript_var var sub ~env
   
   and tr_simple_var var ~env = 
@@ -324,7 +323,7 @@ and trans_fun_decs fs ~env =
     let label = Temp.mk_label None in 
     let parent = Some env.level in 
     let level = Tr.new_level ~parent ~label ~formals:esc_formals in 
-    Trace.Translation.new_level level
+    Trace.Translation.new_level level;
     let formals = List.map args ~f: snd in 
     let entry = FunEntry { level; label; formals; result } in 
     let venv' = ST.bind_fun venv fun_name entry in 
@@ -335,18 +334,18 @@ and trans_fun_decs fs ~env =
   let assert_fun_body (level', params, result) fun_dec = 
     Trace.SemanticAnalysis.assert_fun_body fun_dec result;
     let add_param e ({ name; escapes; _ }, ty) = 
-      let access = Tr.alloc_local ~level:env.level, ~escapes:!escapes in 
+      let access = Tr.alloc_local ~level:env.level ~escapes:!escapes in 
       Trace.Translation.alloc_local access;
       let entry = VarEntry { ty; access } in 
       ST.bind_var e name entry 
     in 
     let venv'' = List.fold_left params ~init:venv' ~f:add_param in 
-    let env' = { env with level = level'; venv = venv'' }
+    let env' = { env with level = level'; venv = venv'' } in 
     let { body; _ } = fun_dec.L.value in 
     let body_ty = trans_expr body ~env:env' in 
     if T.(body_ty.ty <> result) 
     then type_mismatch_error4 
-      "type of the body expression doesn't match the declared result type, "
+    "type of the body expression doesn't match the declared result type, "
       body result body_ty.ty;
     Tr.proc_entry_exit (level', body_ty.expr)
   in
@@ -354,7 +353,7 @@ and trans_fun_decs fs ~env =
   List.iter2_exn (List.rev sigs) fs ~f: assert_fun_body;
   { env with venv = venv' }
   
-  let assert_init var init_ty ~env = 
+and assert_init var init_ty ~env = 
     let open Syntax in 
     let open Env in 
     let { var_typ; init; _ } = var.L.value in 
@@ -364,5 +363,30 @@ and trans_fun_decs fs ~env =
       let var_ty = ST.look_typ env.tenv ann_ty in 
       if T.(var_ty @<> init_ty)
       then type_mismatch_error3 init var_ty init_ty
+and trans_var_dec var ~env = 
+  let open Syntax in 
+  Trace.SemanticAnalysis.trans_var_dec var;
+  let { var_name; init; escapes; _ } = var.L.value in 
+  let init_r = trans_expr init ~env in 
+  assert_init var init_r.ty ~env;
+  let access = Tr.alloc_local ~level:env.level ~escapes:!escapes in 
+  Trace.Translation.alloc_local access;
+  let entry = Env.VarEntry { ty = init_r.ty; access } in 
+  let venv' = ST.bind_var env.venv var_name entry in 
+  let var_expr = Tr.e_simple_var (access, env.level) in 
+  let exprs = [Tr.e_assign (var_expr, init_r.expr)] in 
+  { env with venv = venv' }, exprs
 
-    
+and trans_ty tenv typ =  
+  let open Syntax in
+  Trace.SemanticAnalysis.trans_ty typ;
+  match typ with 
+  | NameTy t -> 
+    ST.look_typ tenv t 
+  | RecordTy dec_fields -> 
+    let to_field { name; typ; _ } = 
+      name.L.value, ST.look_typ tenv typ in 
+    let ty_fields = List.map dec_fields ~f:to_field in 
+    T.Record (ty_fields, U.mk ())
+  | ArrayTy t -> 
+    T.Array (ST.look_typ tenv t, U.mk ())
