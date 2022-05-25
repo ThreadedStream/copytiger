@@ -66,4 +66,139 @@ module SemanticAnalysis = struct
     trace_tr "tr_op" (print_op l op r)
   let tr_record ty_name vfields = 
     trace_tr "tr_record" (print_record ty_name vfields)
+  let tr_record_field name expr ty = 
+    trace_tr "tr_record_field" (print_record_field name expr (Some ty))
+  let tr_seq exprs = 
+    trace_tr "tr_seq" (print_seq exprs)
+  let tr_cond cond t f = 
+    trace_tr "tr_cond" (print_cond cond t f)
+  let tr_then () = 
+    trace (fun m -> m "tr_then")
+  let tr_else () = 
+    trace (fun m -> m "tr_else")
+  let tr_while cond body = 
+    trace_tr "tr_while" (print_while cond body)
+  let tr_for var lo hi body escapes = 
+    trace_tr "tr_for" (print_for var lo hi body escapes)
+  let tr_break br done_l = 
+    let mark = match done_l with 
+      | Some l -> "inside: " ^ Temp.print_label l 
+      | None -> "outside"
+    in
+    trace @@ fun m -> m ">>> tr_break (%s): %s"
+      mark (print_break br)
   
+  let tr_let decs body = 
+    trace_tr "tr_let" (print_let decs body)
+  let tr_array typ size init = 
+    trace_tr "tr_array" (print_array typ size init)
+  
+  let trans_decs decs = 
+    trace @@ fun m -> m ">>> trans_decs:\n%s" (print_decs decs)
+  let trans_type_decs tys = 
+    trace @@ fun m -> m ">>> trans_type_decs:\n%s" (print_type_decs tys)
+  let trans_fun_decs fs = 
+    trace @@ fun m -> m ">>> trans_fun:\n%s" (print_fun_decs fs)
+  let trans_fun_head fun_dec = 
+    trace_tr "trans_fun_head" (print_fun_dec fun_dec)
+  let trans_var_dec var = 
+    trace_tr "trans_var_dec" (print_var_dec var)
+
+  let ret expr ty = 
+    let open T in 
+    trace @@ fun m -> m "<-- %s (%s): \n%s"
+      (to_string ty)
+      (to_string (~! ty))
+      (Tr.Printer.print_expr expr)
+
+  let assert_ty t1 t2 = 
+    trace @@ fun m -> m "!!! (ty) %s = %s" (T.to_string t1) (T.to_string t2)
+
+  let assert_comparison expr l r = 
+    trace @@ fun m -> m "!!! (comparison) %s : %s (%s)"
+      (print_expr l.L.value)
+      (print_expr r.L.value)
+      (print_expr expr.L.value)
+  let assert_op l r = 
+    trace @@ fun m -> m "!!! (op) %s : int && %s : int"
+      (print_expr l.L.value)
+      (print_expr r.L.value)
+  let assert_fun_body fun_dec result = 
+    trace @@ fun m -> m "!!! (fun body) %s : %s"
+      (print_fun_dec fun_dec)
+      (T.to_string result)
+
+  let assert_init var init_ty = 
+    trace @@ fun m -> m "!!! (init) %s : %s"
+      (print_var_dec var)
+      (T.to_string init_ty)
+end
+
+module SyntaxRewriting = struct 
+  open Syntax
+  open Syntax_printer
+
+  let src = Logs.Src.create "tig.syntax-rewriting" ~doc:"Syntax rewriting"
+  let trace f = Logs.debug ~src (fun m -> f (m ~header:"rewrite"))
+
+  let rewrite_for var lo hi body escapes = 
+    trace @@ fun m -> m " %s" (print_for var lo hi body escapes)
+end
+
+module StackFrame = struct 
+  open Frame.Printer 
+
+  let src = Logs.Src.create "tig.stack-frame" ~doc:"Stack frames"
+  let trace f = Logs.debug ~src (fun m -> f (m ~header:"frame"))
+
+  let mk frame = 
+    trace @@ fun m -> m "mk: \n%s" (print_frame frame)
+end
+
+module Translation = struct 
+  open Tr 
+  open Frame.Printer 
+
+  let src = Logs.src.create "tig.translation" ~doc:"Translation"
+  let trace f = Logs.debug ~src (fun m -> f (m ~header:"translate"))
+
+  let new_level level = 
+    let path = 
+      level 
+      |> frames_path
+      |> List.map ~f:Int.to_string 
+      |> String.concat ~sep:"->"
+    in 
+    StackFrame.mk level.frame;
+    trace @@ fun m -> m " new_level: %s" path 
+
+  let alloc_local access = 
+    let (lev, acc) = access in 
+    trace @@ fun m -> m " alloc_local #%d: %s" (Frame.id lev.frame) (print_access acc)
+  
+module Escaping = struct
+  open Syntax
+  open Syntax_printer 
+
+  let src = Logs.Src.create "tig.escaping" ~doc:"Calculating escapes"
+  let trace f = Logs.debug ~src (fun m -> f (m ~header:"escape"))
+
+  let escapes sym depth =
+    trace @@ fun m -> m " %s escapes at depth %d"
+      (print_symbol sym) depth 
+end 
+
+let mk_reporter _cfg = 
+  let open Config in 
+  let app = Format.std_formatter in 
+  let dst = Format.err_formatter in 
+  let report _src (level: Logs.level) ~over k msgf = 
+    let k _ = over (); k () in 
+    msgf @@ fun ?header ?tags:__ fmt ->
+    let ppf = match level with 
+      | Logs.App -> app 
+      | _ -> dst 
+    in 
+    Format.kfprintf k ppf ("%a@[" ^^  fmt ^^ "@]@.") Logs_fmt.pp_header (level, header)
+  in 
+   { Logs.report = report }
