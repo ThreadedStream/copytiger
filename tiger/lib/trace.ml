@@ -53,7 +53,7 @@ module SemanticAnalysis = struct
   let tr_expr expr = 
     trace_tr "tr_expr" (print_expr expr.L.value)
   let tr_var var = 
-    trace_tr "tr_var" (print_var val.L.value)
+    trace_tr "tr_var" (print_var var.L.value)
   let tr_simple_var sym = 
     trace_tr "tr_simple_var" (print_simple_var sym)
   let tr_field_var var field = 
@@ -175,7 +175,9 @@ module Translation = struct
   let alloc_local access = 
     let (lev, acc) = access in 
     trace @@ fun m -> m " alloc_local #%d: %s" (Frame.id lev.frame) (print_access acc)
-  
+end 
+
+
 module Escaping = struct
   open Syntax
   open Syntax_printer 

@@ -32,7 +32,7 @@ type t = {
   break : Temp.label option;
 }
 
-let base_venv = St.empty
+let base_venv = ST.empty
 
 let base_tenv = 
   let open ST in 

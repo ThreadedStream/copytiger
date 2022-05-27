@@ -18,4 +18,28 @@ let unEx expr =
     let t = Temp.mk_label None in 
     let f = Temp.mk_label None in 
     let stmt = seq 
-      [ ~*r <<< ~$1 ]
+      [ ~*r <<< ~$1 
+      ; cond(t, f) 
+      ; ~|f
+      ; ~*r <<< ~$0
+      ; ~|t 
+      ] in
+    ESeq (stmt, ~*r)
+  | Nx s -> ESeq (s, ~$0)
+
+let unNx expr = 
+  let open Ir in 
+  match expr with
+  | Ex e -> Expr e 
+  | Nx s -> s 
+  | Cx cond -> 
+    let l = Temp.mk_label None in 
+    let stmt = cond(l, l) in 
+    Seq(stmt, ~|l)
+
+let unCx expr = 
+  let open Ir in 
+  match expr with 
+  | Ex (Const 0) -> fun (_, f) -> ~:f <|~ [f]
+  | Ex (Const 1) -> fun (t, _) -> ~:t <|~ [t]
+  

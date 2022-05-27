@@ -38,6 +38,7 @@ and binop =
 and relop = 
   | Eq | Ne 
   | Lt | Gt | Le | Ge 
+  | Ult | Ugt | Ule | Uge 
 [@@deriving compare, equal, show { with_path = false }]
 
 let binop_of_op = function 

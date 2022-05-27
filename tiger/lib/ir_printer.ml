@@ -8,7 +8,7 @@ let rec indent s = function
 let p_binop op = String.uppercase @@ Ir.show_binop op 
 let p_relop op = String.uppercase @@ Ir.show_relop op 
 
-and p_expr i = function 
+let rec p_expr i = function 
   | Const x -> 
     indent (sprintf "CONST %d" x) i 
   | Name l ->
@@ -45,7 +45,7 @@ and p_stmt i = function
       (p_expr (i + 1) dst)
       (p_expr (i + 1) src)
     ) i 
-  | Expr expr 
+  | Expr expr -> 
     indent (sprintf "EXPR\n%s" (p_expr (i + 1) expr)) i 
   | Jump (expr, _) -> 
     indent (sprintf "JUMP\n%s" (p_expr (i + 1) expr)) i 

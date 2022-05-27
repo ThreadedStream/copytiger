@@ -96,7 +96,7 @@ let proc_entry_exit1 (_, body) =
   body 
 
 module Printer = struct 
-  let print_access function 
+  let print_access = function 
     | InFrame offset -> sprintf "F(%d)" offset 
     | InReg temp -> sprintf "R(%s)" (Temp.show temp)
   
