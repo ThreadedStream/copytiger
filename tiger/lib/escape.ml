@@ -118,7 +118,7 @@ let traverse_prog expr =
   and tr_fun_dec dec ~env = 
     let depth = env.depth + 1 in 
     let add_arg table (arg : field) = 
-      let data = (depth; escapes = arg.escapes) in
+      let data = {depth; escapes = arg.escapes} in
       Table.set table ~key:arg.name.L.value ~data 
     in 
     let table' = List.fold_left 

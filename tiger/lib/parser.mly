@@ -103,10 +103,10 @@ let expr :=
     | seq 
 
 let nil := 
-    ~ = loc("nil"); <NIL>
+    ~ = loc("nil"); <Nil>
 
 let break := 
-    ~ = loc("break"); <BREAK>
+    ~ = loc("break"); <Break>
 
 let primitive :=
     | ~ = loc("string"); <String>
@@ -231,7 +231,7 @@ let lvalue_complex :=
     | v = symbol; "."; f = symbol;
      { FieldVar(L.mk (SimpleVar v) v.L.loc, f) }
     | ~ = loc(lvalue_complex); "."; ~ = symbol;
-        <Field>
+        <FieldVar>
     | s = symbol; e = bracketed(expr);
         { SubscriptVar(L.mk (SimpleVar s) s.L.loc, e) }
     | ~ = loc(lvalue_complex); ~ = bracketed(expr);

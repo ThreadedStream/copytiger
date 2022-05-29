@@ -18,7 +18,7 @@ let ret expr ty =
   { expr; ty }
 
 let ret_int x = ret (Tr.e_int x) T.Int 
-let ret_string s = ret (Tr.e_string x) T.String
+let ret_string s = ret (Tr.e_string s) T.String
 let ret_nil = ret Tr.e_nil T.Nil 
 let ret_unit = ret Tr.e_unit T.Unit 
 
@@ -66,7 +66,7 @@ and trans_expr expr ~env =
     | String s -> ret_string s.L.value 
     | Call (f, args) -> tr_call f args ~env 
     | Op (l, op, r) -> tr_op l op.L.value r ~env
-    | Record (name, fields) -> tr_record name field ~env 
+    | Record (name, fields) -> tr_record name fields ~env 
     | Seq [] -> ret_unit 
     | Seq exprs -> tr_seq exprs ~env 
     | Assign (var, expr) -> tr_assign var expr ~env 
@@ -107,14 +107,14 @@ and trans_expr expr ~env =
       ret expr result 
   
   and tr_op l op r ~env = 
-    Trace.SemanticAnalysis.tr_op op r;
+    Trace.SemanticAnalysis.tr_op l op r;
     let lr = tr_expr l ~env in 
     let rr = tr_expr r ~env in 
     (match op with 
       | Eq | Neq -> 
         assert_ty lr.ty rr.ty
       | _ -> 
-        assert_int lr.ty 
+        assert_int lr.ty;
         assert_int rr.ty);
     let args = (lr.expr, op, rr.expr) in 
     let ty = T.Int in 
@@ -165,8 +165,8 @@ and trans_expr expr ~env =
     let cond_r = tr_expr cond ~env in 
     let (done_l, env') = Env.enter_loop env in 
     let body_r = tr_expr body ~env:env' in 
-    assert_int cond_r.ty
-    assert_unit body_r.ty 
+    assert_int cond_r.ty;
+    assert_unit body_r.ty; 
     ret (Tr.e_loop (cond_r.expr, body_r.expr, done_l)) T.Unit 
   
   and tr_for var lo hi body escapes ~env = 
@@ -212,7 +212,7 @@ and trans_expr expr ~env =
 
   and tr_array typ size init ~env = 
       let open T in 
-      Trace.SematicAnalysis.tr_array typ size init;
+      Trace.SemanticAnalysis.tr_array typ size init;
       let size_r = tr_expr size ~env in 
       assert_int size_r.ty;
       let init_r = tr_expr init ~env in 
@@ -249,7 +249,7 @@ and trans_expr expr ~env =
           formals
           |> List.map ~f:T.to_string 
           |> String.concat ~sep: ", " in 
-        type_error @@ sprintf 
+        type_error var @@ sprintf 
           "expected variable, but found a function \"(%s) : %s\""
           signature (T.to_string result)
   and tr_field_var var field ~env = 

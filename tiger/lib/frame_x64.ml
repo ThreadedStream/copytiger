@@ -45,7 +45,7 @@ let r15 = Temp.mk_named "R15"
 
 let caller_regs = [r10; r11]
 
-let calee_regs  = [rbx; r12; r13; r14; r15]
+let callee_regs  = [rbx; r12; r13; r14; r15]
 
 let access_expr access ~addr = 
   let open Ir in 
