@@ -70,6 +70,8 @@ module SemanticAnalysis = struct
     trace_tr "tr_record_field" (print_record_field name expr (Some ty))
   let tr_seq exprs = 
     trace_tr "tr_seq" (print_seq exprs)
+  let tr_assign var expr =
+    trace_tr "tr_assign" (print_assign var expr)
   let tr_cond cond t f = 
     trace_tr "tr_cond" (print_cond cond t f)
   let tr_then () = 
@@ -159,7 +161,7 @@ module Translation = struct
   open Tr 
   open Frame.Printer 
 
-  let src = Logs.src.create "tig.translation" ~doc:"Translation"
+  let src = Logs.Src.create "tig.translation" ~doc:"Translation"
   let trace f = Logs.debug ~src (fun m -> f (m ~header:"translate"))
 
   let new_level level = 

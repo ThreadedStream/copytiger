@@ -193,17 +193,16 @@ let var_dec :=
     | "var"; var_name = symbol; ":"; vt = symbol; ":="; init = loc(expr);
         { { var_name; var_typ = Some vt; init; escapes = ref false } }
 
-let create_rec := 
-    typ = symbol; fields = delimited("{", init_rec_fields, "}");
-    { Record(typ, fields) }
+let create_rec :=
+  typ = symbol; fields = delimited("{", init_rec_fields, "}");
+  { Record(typ, fields) }
 
 let create_arr := 
     typ = symbol; size = bracketed(expr); "of"; init = loc(expr);
     { Array(typ, size, init) }
 
-let init_rec_fields := 
-    name = symbol; "="; e = loc(expr);
-    { (name, e) }
+let init_rec_fields :=
+  ~ = separated_list(",", init_rec_field); <>
 
 let init_rec_field := 
     name = symbol; "="; e = loc(expr);
