@@ -1,4 +1,4 @@
 (executable
  (public_name tiger)
  (name driver)
- (libraries tiger))
+ (libraries tiger core logs fmt fmt.tty logs.fmt))

@@ -7,4 +7,4 @@ val linearize : stmt -> stmt list
 
 val basic_blocks : stmt list -> label * block list 
 
-val trace_schedule : label * block_list -> stmt list 
+val trace_schedule : label * block list -> stmt list 

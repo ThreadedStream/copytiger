@@ -65,7 +65,7 @@ let mk_config () =
 	] in 
 	Config.make ~trace_sources ()
 
-let run file fn () = 
+let run_file fn () = 
 	let cfg = mk_config () in 
 	Logs.set_reporter @@ Trace.mk_reporter cfg;
 	In_channel.with_file fn ~f:(run_tiger fn)
