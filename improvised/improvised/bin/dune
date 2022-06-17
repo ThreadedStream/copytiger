@@ -1,0 +1,7 @@
+(executable
+ (public_name improvised)
+ (name main)
+ (preprocess (pps ppx_deriving.show ppx_deriving.ord))
+ (libraries improvised))
+
+(env (dev (flags (:standard -warn-error -A))))
