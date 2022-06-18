@@ -1,2 +1,4 @@
 (library
  (name improvised))
+
+(env (dev (flags (:standard -warn-error -A))))

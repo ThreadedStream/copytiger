@@ -1,3 +1,4 @@
+open Improvised 
 
 type token = Let
   | Read
@@ -7,9 +8,15 @@ type token = Let
   | Id of string 
   | Comma
   | Semicolon
+  | LParen
+  | RParen 
   | ErrTok
+  | EOF 
   [@@deriving show]
 
+
+type stream = {  mutable last_chr: char option; mutable line_num: int; chan: in_channel }
+ 
 let read_file filename = 
   let lines = ref [] in 
   let chan = open_in filename in 
@@ -26,22 +33,10 @@ let explode s =
     if i < 0 then l else exp (i - 1) (s.[i] :: l) in 
   exp (String.length s - 1) []
 
-type stream = {  mutable chr: char option; mutable line_num: int; chan: in_channel }
 
-let open_stream filename = 
-  let chan = open_in filename in 
-  { chr=None; line_num=0; chan=chan}
+let open_stream filename = { last_chr=None; line_num=0; chan=open_in filename}
 
 let close_stream stream = close_in stream.chan 
-
-let read_char stream = match stream.chr with 
-  | None -> let c = input_char stream.chan in 
-          if c == '\n' then 
-            let _ = stream.line_num <- stream.line_num + 1 in c
-          else c 
-  | Some c -> stream.chr <- None; c
-
-let unread_char stream c = stream.chr <- c
 
 let is_digit c =
   let code = Char.code c in 
@@ -59,8 +54,22 @@ let is_id token =
 
 let is_space c = (c == '\t') || (c == '\n') || (c == '\r') || (c == ' ')
 
+let advance stream = stream.last_chr <- In_channel.input_char stream.chan 
+
+let rec eat_space stream =
+  match stream.last_chr with 
+    | None -> () 
+    | Some c -> 
+      if (is_space c) then 
+        advance stream
+      else 
+        () 
+  
 let is_keyword id = 
   id == "write" || id == "read" || id == "let"
+
+let is_delim c = 
+  c == ',' || c == ';' || c == '(' || c == ')'
 
 let eof = '\000'
 
@@ -68,29 +77,47 @@ let tokenize_id id = match id with
   | "write" -> Write 
   | "read" -> Read
   | "let"  -> Let 
+  | "hello" -> Hello 
+  | "bye"  -> Bye 
   | _ -> Id(id)
 
-let tokenize stream =
-  let token = ref "" in
-  let c = ref '0' in 
-  c := read_char stream;
-  match !c with 
-  | 'a'..'z' | 'A'..'Z' -> 
-    token := String.concat "" [!token; Char.escaped !c];
-    c := read_char stream; 
-    while not (is_space(!c)) do
-      token := String.concat "" [!token; Char.escaped !c];
-      c := read_char stream
-    done;
-    tokenize_id !token
-  | eof -> print_endline "eof"; Id("eof")
+let rec scan s = 
+  s.last_chr <- In_channel.input_char s.chan;
+  match s.last_chr with 
+  | Some c -> 
+    (match c with 
+      | 'a'..'z' | 'A'..'Z' ->   
+        let token = ref "" in 
+        while is_alphanum (Option.get s.last_chr) do 
+          token := !token ^ (Char.escaped (Option.get s.last_chr));
+          s.last_chr <- In_channel.input_char s.chan
+        done; 
+        tokenize_id !token
+      | '(' -> LParen 
+      | ')' -> RParen 
+      | ';' -> Semicolon 
+      | ',' -> Comma 
+      | _ -> 
+        if is_space c then 
+          (eat_space s; scan s)
+        else 
+          ErrTok
+    )
+  | None -> 
+    (* Run out of symbols to process *)
+    EOF
 
 let () = 
-  let filename = Sys.argv.(1) in 
+  (* let filename = Sys.argv.(1) in 
   let stream = open_stream filename in
   let tok = ref ErrTok in 
-  tok := tokenize stream;
-  while not (!tok == Id("eof")) do
+  tok := scan stream;
+  while not (!tok == EOF) do
     print_endline (show_token !tok);
-    tok := tokenize stream
-  done
+    tok := scan stream
+  done *)
+  let open Ast in 
+  let nodes = [LetStmt([Id(Symbol.make "x"); Id(Symbol.make "y")]); 
+               ReadStmt([Id(Symbol.make "x"); Id(Symbol.make "y")]); 
+              WriteStmt([Id(Symbol.make "x"); Id(Symbol.make "y")])] in 
+  tr_stmts nodes
