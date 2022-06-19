@@ -17,5 +17,5 @@ let () =
   tok_stream := List.rev !tok_stream; 
   (* parsing *)
   let parser = new_parser !tok_stream in
-  parse parser
+  let s = parse parser in 
   ()

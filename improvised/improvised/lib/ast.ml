@@ -16,13 +16,13 @@ type buffer = { mutable buf: string }
 type stmt = LetStmt of stmt list 
   | WriteStmt of stmt list
   | ReadStmt of stmt list 
-  | Id of Symbol.t 
+  | IdExpr of Symbol.t 
 
 let rec tr_stmt context buf s = match s with  
   | LetStmt bs -> tr_let buf bs 
   | WriteStmt args -> tr_write buf args 
   | ReadStmt args -> tr_read buf args 
-  | Id id -> tr_id context buf id
+  | IdExpr id -> tr_id context buf id
   | _ -> failwith "unknown node"
 
   and tr_let buf bs = 
