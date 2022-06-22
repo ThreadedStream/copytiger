@@ -1,0 +1,6 @@
+(executable
+ (public_name joyfulmenhir)
+ (name main)
+ (libraries joyfulmenhir))
+
+(env (dev (flags (:standard -warn-error -A))))
