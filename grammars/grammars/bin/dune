@@ -1,6 +1,6 @@
 (executable
  (public_name grammars)
  (name main)
- (libraries grammars))
+ (libraries grammars base))
 
 (env (dev (flags (:standard -warn-error -A))))

@@ -22,8 +22,12 @@ and term =
 
 and factor =  
   | Expression of expression 
-  | Literal of int 
+  | Literal of literal
   | Name of name 
 
 and name = 
   Id of string 
+
+and literal = 
+  | IntLit of int
+  | FloatLit of float 

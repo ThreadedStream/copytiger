@@ -1,4 +1,5 @@
 %token <int> INT 
+%token <float> FLOAT 
 %token <string> ID 
 %token PLUS MINUS TIMES DIV
 %token LPAREN RPAREN ASSIGN
@@ -22,7 +23,8 @@
   
   let factor := 
         | LPAREN; e = expr; RPAREN; { Syntax.Expression(e) }
-        | i = INT; { Syntax.Literal(i) }
+        | i = INT; { Syntax.Literal(IntLit(i)) }
+        | f = FLOAT; { Syntax.Literal(FloatLit(f)) }
   
   let additiveop == 
       | PLUS; { OpPlus }
