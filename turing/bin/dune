@@ -1,0 +1,6 @@
+(executable
+ (public_name turing)
+ (name main)
+ (libraries turing base))
+
+(env (dev (flags (:standard -warn-error -A))))
