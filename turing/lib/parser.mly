@@ -4,9 +4,13 @@
 %token <int> EXPLICIT_UNSIGNED_INTEGER_CONST 
 %token PLUS MINUS TIMES DIV 
 %token MOD POWER 
+%token VAR CONST TYPE
+%token INT REAL BOOLEAN STRING ARRAY
 %token LESS_THAN GREATER_THAN GREATER_THAN_OR_EQ LESS_THAN_OR_EQ
 %token NOT_EQ NOT 
+%token END RECORD 
 %token AND OR 
+%token OF 
 %token ASSIGN 
 %token COLON 
 %token GET PUT SKIP OPEN CLOSE
@@ -26,13 +30,63 @@
 		| e = expression; { e }
 		| el = expression_list; { el }
 		
-	// let expression :=	
-	// 	| reference 
-	// 	| explicit_constant
-	// 	| substring
-	// 	| expression infix_operator expression 
-	// 	| prefix_operator expression
-	// 	| LPAREN expression RPAREN 
+
+	let type_declaration := 
+		| TYPE; id = ID; COLON; ts = type_spec; { (*TODO*) }
+
+	let type_spec := 
+		| st = standard_type; { st }
+		| srt = subrange_type; { srt }
+		| at = array_type; { at }
+		| rt = record_type; { rt }
+		| nt = named_type; { nt }
+	
+	let standard_type := 
+		| INT; { (*TODO*) }
+		| REAL; { (*TODO*) }
+		| BOOLEAN; { (*TODO*) }
+		| STRING; cte = opt_comp_time_expression; { (*TODO*) }
+	
+	let subrange_type := 
+		| cte = compile_time_expression; DOTDOT; exp = expression; { (* TODO *) }
+	
+	let array_type := 
+		| ARRAY; itl = index_type_nonempty_list; OF; ts = type_spec; { (* TODO *) } 
+
+	let record_type :=	
+		| RECORD; idl = identifier_nonempty_list; COLON; ts = type_spec; END; RECORD; { (* TODO *) }
+
+	let named_type := 
+		| id = ID; { (* TODO *) }
+
+	let subprogram_declaration :=	
+		| sh = subprogram_header; sb = subprogram_body; { (* TODO *) }
+
+	let subprogram_header := 	
+		| PROCEDURE; id 	
+
+	let type_spec_id_nonempty_list := 
+		| ts = type_spec; { (* TODO *) }
+		| hd = identifier_spec_component; tl = type_spec_id_nonempty_list; { (* TODO *) }
+
+	let identifier_nonempty_list := 
+		| id = ID; { (* TODO *) }
+		| hd = ID; COMMA; tl = identifier_nonempty_list; { (* TODO *) }
+	
+	let identifier_spec_component := 
+		| idl = identifier_nonempty_list; COLON; ts = type_spec; { (* TODO*) }
+
+	let index_type_nonempty_list := 
+		| it = index_type; { (* TODO *) }
+		| it = index_type; COMMA; itl = index_type_nonempty_list; { (* TODO *) }
+
+	let index_type := 
+		| st = subrange_type; { (* TODO *) }
+		| nt = named_type; 	{ (* TODO *) }
+
+	let opt_comp_time_expression :=
+		| (* empty *) { None }
+		| LPAREN; cte = compile_time_expression; RPAREN; { (* TODO *) }
 	
 	(* expression types *)
 
@@ -87,7 +141,7 @@
 		|	explist = expression_nonempty_list; { explist }
 
 	let put_item := 	
-		| e = expression; 
+		| e = expression; { e } 
 
 	let get_item := 
 		| vr = variable_reference; { (* TODO *) }
@@ -108,10 +162,6 @@
 
 	let expression := 
 		| expconst = explicit_constant; { ExplicitConstant(expconst) } 	
-
-	// let component_selector := 	
-	// 	| explist = expression_nonempty_list {  }
-	// 	| DOT IDENTIFIER 
 
 	let explicit_constant := 	
 		| i = EXPLICIT_UNSIGNED_INTEGER_CONST; { ExplicitIntegerConst(i) } 

@@ -69,6 +69,28 @@ and token = parse
     { COMMA }
   | "close" 
     { CLOSE }
+  | "type"
+    { TYPE }
+  | "end"
+    { END }
+  | "record"  
+    { RECORD }
+  | "var"
+   { VAR }
+  | "const" 
+    { CONST }
+  | "of"
+    { OF }
+  | "int"
+    { INT }
+  | "real"
+    { REAL }
+  | "boolean"
+    { BOOLEAN }
+  | "string"
+    { STRING }
+  | "array"
+    { ARRAY } 
   | "get"
     { GET }
   | "put"
